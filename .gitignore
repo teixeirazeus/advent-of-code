@@ -1,6 +1,6 @@
+input_data.py
 *.jpg
 *.ipynb
-sauvvitech-firebase-adminsdk.json
 
 *.pyc
 *.cpython-*
