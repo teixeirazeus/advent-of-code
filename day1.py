@@ -27,3 +27,5 @@ for line in input_data.split("\n"):
     number = int(txt_to_number(sorted_finds[0][1]) + txt_to_number(sorted_finds[-1][1]))
     sum_final += int(txt_to_number(sorted_finds[0][1]) + txt_to_number(sorted_finds[-1][1]))
 print(sum_final)
+
+
