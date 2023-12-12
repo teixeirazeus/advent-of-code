@@ -5,7 +5,13 @@ from input_data import input_data
 # .L-J.
 # ....."""
 
-# input_data = """...........
+# input_data = """..F7.
+# .FJ|.
+# SJ.L7
+# |F--J
+# LJ..."""
+
+# input_data = """..........
 # .S------7.
 # .|F----7|.
 # .||....||.
@@ -15,23 +21,40 @@ from input_data import input_data
 # .L--JL--J.
 # .........."""
 
-# input_data = """FF7FSF7F7F7F7F7F---7
-# L|LJ||||||||||||F--J
-# FL-7LJLJ||||||LJL-77
-# F--JF--7||LJLJ7F7FJ-
-# L---JF-JLJ.||-FJLJJ7
-# |F|F-JF---7F7-L7L|7|
-# |FFJF7L7F-JF7|JL---7
-# 7-L-JL7||F7|L7F-7F7|
-# L.L7LFJ|||||FJL7||LJ
-# L7JLJL-JLJLJL--JLJ.L"""
+# input_data = """.F----7F7F7F7F-7....
+# .|F--7||||||||FJ....
+# .||.FJ||||||||L7....
+# FJL7L7LJLJ||LJ.L-7..
+# L--J.L7...LJS7F-7L7.
+# ....F-J..F7FJ|L7L7L7
+# ....L7.F7||L7|.L7L7|
+# .....|FJLJ|FJ|F7|.LJ
+# ....FJL-7.||.||||...
+# ....L---J.LJ.LJLJ..."""
 
-DOWN = (1,0)
-UP = (-1,0)
-LEFT = (0,-1)
-RIGHT = (0,1)
+class Point():
+    def __init__(self, y, x):
+        self.y = y
+        self.x = x
+        
+    def __add__(self, point):
+        y = self.y + point.y
+        x = self.x + point.x
+        return Point(y, x)
+    
+    def __str__(self):
+        return f"({self.y},{self.x})"
+        
+    def value(self):
+        return (self.y, self.x)
+    
+UP = Point(-1,0)
+DOWN = Point(1,0)
+LEFT = Point(0,-1)
+RIGHT = Point(0,1)
 
-# y, x
+arrow_directions = (UP, DOWN, LEFT, RIGHT)
+
 directions = {
     "|": ((DOWN, UP), (UP, DOWN)),
     "-": ((LEFT, RIGHT), (RIGHT, LEFT)),
@@ -51,105 +74,94 @@ dir_options = {
     "F": (RIGHT, DOWN),
     "S": (DOWN, UP, LEFT, RIGHT),
 }
-def get_direction_vectors():
-    vectors = []
-    for i in range(-1,2):
-        for j in range(-1,2):
-            if i != j and 0 in (i,j):
-                vectors.append((i,j))
-    return vectors
-direction_vectors = get_direction_vectors()
-
-def invert_direction(dir):
-    y, x = dir
-    y *= -1
-    x *= -1
-    return (y,x)
-
-def is_floor(point):
-    return mapp[point[0]][point[1]] == "."
-
-def is_start(point):
-    return mapp[point[0]][point[1]] == "S"
-
-def is_inside_map(point):
-    y,x = point
-    y_check = 0 <= y < len(mapp)
-    x_check = 0 <= x < len(mapp[0])
-    return y_check and x_check
-
-def is_inside_map_arg(point, local_map):
-    y,x = point
-    y_check = 0 <= y < len(local_map)
-    x_check = 0 <= x < len(local_map[0])
-    return y_check and x_check
-
-def add_vector(v1, v2):
-    return (v1[0]+v2[0], v1[1]+v2[1])
+        
+class PipeMap():
+    def __init__(self, data):
+        self.map = []
+        if isinstance(data, list):
+            self.map = data
+        else:
+            for line in data.splitlines():
+                self.map.append(list(line))
+            
+    def get_value(self, point):
+        return self.map[point.y][point.x]
+            
+    def start_point(self):
+        for y, line in enumerate(self.map):
+            for x, value in enumerate(line):
+                if value == "S":
+                    return Point(y,x)
     
-def get_possible_directions(point):
-    possible = []
-    y,x = point
-    for direction in dir_options[mapp[y][x]]:
-        step = add_vector((y,x), direction)
-        if is_inside_map(step) and not is_floor(step):
-            tile = mapp[step[0]][step[1]]
-            for inn, _ in directions[tile]:
-                if inn == direction:
-                    possible.append(add_vector((y,x), direction))
-    return possible
+    def is_floor(self, point):
+        return self.map[point.y][point.x] == "."
     
-def print_map(mapp):
-    for line in mapp:
-        print(line)
+    def is_start(self, point):
+        return self.map[point.y][point.x] == "S"
+    
+    def check_bound(self, point):
+        y_check = 0 <= point.y < len(self.map)
+        x_check = 0 <= point.x < len(self.map[0])
+        return y_check and x_check
+    
+    def flood(self):
+        self.map[0][0] = "~"
+        used_water = True
+        while used_water:
+            used_water = False
+            
+            for y, line in enumerate(self.map):
+                for x, value in enumerate(line):
+                    if value == "~":
+                        for d in arrow_directions:
+                            step = Point(y, x)+d
+                            if self.check_bound(step):
+                                if self.get_value(step) == " ":
+                                    self.map[step.y][step.x] = "~"
+                                    used_water = True
+    
+    def print(self):
+        for line in self.map:
+            print(line)
 
-def get_start_point(mapp):
-    for y, value in enumerate(mapp):
-        for x, value in enumerate(mapp[y]):
-            if value == "S":
-                return (y,x)
+main_map = PipeMap(input_data)
+main_map.print()
+print(main_map.start_point())
 
-def calculate_step_distance(point_a, point_b):
-    return abs(point_a[0]-point_b[0])+abs(point_a[1]-point_b[1])
+max_len_path = 0
+max_path = None
 
-mapp = list(map(lambda x: list(x), input_data.splitlines()))
-
-start_point = get_start_point(mapp)
-max_distance = 0
-max_path = []
+def check_point_in_path(point, path):
+    for p in path:
+        if p.y == point.y and p.x == point.x:
+            return True
+    return False
 
 def deep_search(path):
-    global max_distance, max_path
-    if len(path) > 3 and is_start(path[-1]):
-        for index, local in enumerate(path):
-            distance = calculate_step_distance(start_point, local)
-            if distance > max_distance:
-                max_distance = len(path)//2
-                max_path = path
-                print("New max:", max_distance)
-        return
-    for step in get_possible_directions(path[-1]):
-        if step not in path[1:]:
-            deep_search(path+[step])
+    global max_len_path, max_path
+    if len(path) > 3 and main_map.is_start(path[-1]):
+        print("Found S")
+        if max_len_path < len(path):
+            max_len_path = len(path) -1
+            max_path = path
+            return
+    for dir in arrow_directions:
+        if dir in dir_options[main_map.get_value(path[-1])]:
+            step = path[-1]+dir
+            if main_map.check_bound(step):
+                if not main_map.is_floor(step):
+                    step_value = main_map.get_value(step)
+                    for inn, _ in directions[step_value]:
+                        if inn.y == dir.y and inn.x == dir.x:
+                            if not check_point_in_path(step, path[1:]):
+                                deep_search(path+[step])
 import sys
+sys.setrecursionlimit(100+(len(main_map.map)*len(main_map.map[0])))
+deep_search([main_map.start_point()])
+result = max_len_path//2
+print(result)
+# print(main_map.start_point() in [main_map.start_point()])
 
-# p = get_possible_directions(start_point)
-# print(p)
-# for point in p:
-#     print(mapp[point[0]][point[1]])
-
-sys.setrecursionlimit(100+(len(mapp)*len(mapp[0])))
-deep_search([start_point])
-
-
-# p1
-# wrong 50
-# wrong 7178, too high
-# wrong 198
-# 6886
-
-import os
-import time
 
 print("Part 2")
 
@@ -180,101 +192,46 @@ tile_to_matrix = {
           [" ", " ", " "]],
 }
 
-# for p in max_path:
-#     print(p)
-#     mapp[p[0]][p[1]] = "X"
-#     os.system('clear')
-#     print_map(mapp)
-#     time.sleep(1)
-    
-drawn_mapp = []
-
-for y in range(len(mapp)*3):
+second_map = []
+for y in range(len(main_map.map)*3):
     new_line = []
-    for x in range(len(mapp[0])*3):
+    for x in range(len(main_map.map[0])*3):
         new_line.append(" ")
-    drawn_mapp.append(new_line)
-
-for y in range(len(mapp)):
-    for x in range(len(mapp[y])):
-        tile = mapp[y][x]
-        tile_matrix = tile_to_matrix[tile]
-        for y_m in range(len(tile_matrix)):
-            for x_m in range(len(tile_matrix[y_m])):
-                drawn_mapp[(y*3)+y_m][(x*3)+x_m] = tile_matrix[y_m][x_m]
-
-def flood_map(local_map):
-    local_map[0][0] = "~"
+    second_map.append(new_line)
     
-    used_water = True
-    while used_water:
-        used_water = False
-        for y, line in enumerate(local_map):
-            for x, value in enumerate(line):
-                if value == "~":
-                    for direction in (UP, DOWN, LEFT, RIGHT):
-                        step = add_vector((y,x), direction)
-                        if is_inside_map_arg(step, local_map):
-                            if local_map[step[0]][step[1]] not in ["X", "~"]:
-                                local_map[step[0]][step[1]] = "~"
-                                used_water = True
-    return local_map
+second_map = PipeMap(second_map)
+        
+for y, line in enumerate(main_map.map):
+    for x, value in enumerate(main_map.map[y]):
+        matrix = tile_to_matrix[value]
+        for i in range(3):
+            for j in range(3):
+                y_final = (y*3)+i
+                x_final = (x*3)+j
+                second_map.map[y_final][x_final] = matrix[i][j]
+                
+second_map.flood()
 
-# def empty_count(real_map, local_map):
-#     for y, line in enumerate(real_map):
-#         for x, value in enumerate(real_map):
-#             for
-
-
-def get_result_matrix(y_start, x_start):
-    result_matrix = []
-    y = y_start*3
-    x = x_start*3
-    for y_m in range(y, y+3):
-        new_line = []
-        for x_m in range(x, x+3):
-            new_line.append(drawn_mapp[y_m][x_m])
-        result_matrix.append(new_line)
-    return result_matrix
-    
-def is_empty(matrix):
+def is_empty_matrix(matrix):
     empty_count = 0
     for line in matrix:
-        for value in line:
-            if value == " ":
-                empty_count += 1
+        empty_count += line.count(" ")
     return empty_count > 5
-        
-print_map(drawn_mapp)
-drawn_mapp = flood_map(drawn_mapp)
-print_map(drawn_mapp)
-count = 0
-
-for y in range(len(mapp)):
-    for x in range(len(mapp[y])):
-        result_matrix = get_result_matrix(y, x)
-        print_map(result_matrix)
-        print("-")
-        if is_empty(result_matrix):
-            count += 1
-print(count)
-# area = 0
-# for y, line in enumerate(drawn_mapp):
-#     found_x = False
-#     x_local = -1
-#     for x, tile in enumerate(line):
-#         if tile == "X" and not found_x:
-#             found_x = True
-#             x_local = x
-#             continue
-#         elif tile == "X" and found_x:
-#             if x_local == -1:
-#                 raise Exception("x_local is negative")
-#             found_x = False
-#             area += x-x_local-1
-# print(area)
-# print_map(drawn_mapp)
 
 
-# p2
-# 647 wrong, too high
+area = 0
+for y, line in enumerate(main_map.map):
+    for x, value in enumerate(main_map.map[y]):
+        matrix = []
+        for i in range(3):
+            new_line = []
+            for j in range(3):
+                y_final = (y*3)+i
+                x_final = (x*3)+j
+                new_line.append(second_map.map[y_final][x_final])
+            matrix.append(new_line)
+        area += is_empty_matrix(matrix)
+
+print(area)
+# second_map.print()
+
