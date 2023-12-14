@@ -95,6 +95,8 @@ from input_data import input_data
 # # print(HashCase("???.### 1,1,3").count_solutions())
 # cases = [HashCase(line) for line in input_data.splitlines()]
 
+
+# version 2
 from functools import cache
 
 @cache
@@ -132,5 +134,51 @@ def get_result(case):
     return count(case[0], case[1])
 
 with multiprocessing.Pool(processes=20) as pool:
+    results = pool.map(get_result, cases)
+print(sum(results))
+
+
+# version 3
+def count(case, solution):
+    case_l = list(case)
+    question_indexs = []
+    for index, value in enumerate(case_l):
+        if value == "?":
+            question_indexs.append(index)
+    hash_total = sum(solution)
+    dot_total = len(question_indexs)
+    
+    def f(case_l, hash, dot, questions):
+        result = 0
+        if len(questions) == 0:
+            case = "".join(case_l).split(".")
+            return solution == tuple([len(c) for c in case if len(c) > 0])
+        if hash > 0:
+            case_l[questions[0]] = "#"
+            result += f(case_l, hash-1, dot, questions[1:])
+        if dot > 0:
+            case_l[questions[0]] = "."
+            result += f(case_l, hash, dot-1, questions[1:])
+        return result
+    
+    return f(case_l, hash_total, dot_total, question_indexs)
+    
+    
+cases = []
+for line in input_data.splitlines():
+    cfg, nums = line.split()
+
+    cfg = "?".join([cfg]*5)
+    nums += ","
+    nums *= 5
+    nums = nums[:-1]
+    
+    nums = tuple(map(int, nums.split(",")))
+    cases.append((cfg, nums))
+
+def get_result(case):
+    return count(case[0], case[1])
+
+with Pool(processes=20) as pool:
     results = pool.map(get_result, cases)
 print(sum(results))
