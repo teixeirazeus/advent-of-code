@@ -38,7 +38,7 @@ def load_cases(data):
     cases = []
     case = []
     for line in data.splitlines():
-        print(line, len(line))
+        # print(line, len(line))
         if len(line) == 0:
             cases.append(case)
             case = []
@@ -102,33 +102,24 @@ def flip(value):
 
 
 def get_result_p2(case):
-    results = set()
-    first = get_result(case)
-    results.add(first)
-    results.add(0)
+    first_solution = get_result(case)
     for y, line in enumerate(case):
         for x, value in enumerate(line):
             try_case = [[i for i in l] for l in case]
             try_case[y][x] = flip(value)
-            # print(y, x)
-            # print_case(try_case)
-            # input()
-            r = try_match(case)
-            if len(r) > 0:
-                results.add(r[0])
+            r = try_match(try_case)
+            for i in r:
+                if i not in (0, first_solution):
+                    return i
             c = try_match(rotate_matrix(try_case))
-            if len(c) > 0:
-                results.add((len(case) - c[0]) * 100)
-            print(results)
-    results.remove(first)
-    results.remove(0)
-    results = list(results)
-    if len(results) > 0:
-        return results[0]
-    else:
-        print("Case not found")
-        print_case(case)
-        return 0
+            for i in c:
+                result = (len(case) - i) * 100
+                if result not in (0, first_solution):
+                    return result
+    print("*")
+    print_case(case)
+    print("*")
+    return 0
 
 
 # print("Result", get_result_p2(cases[1]))
@@ -138,8 +129,8 @@ def get_result_p2(case):
 result = []
 for i, case in enumerate(cases):
     result.append(get_result_p2(case))
-for i in result:
-    print(i)
+# for i in result:
+#     print(i)
 print(sum(result))
 
 
@@ -151,4 +142,6 @@ print(sum(result))
 
 # p2
 # wrong 35031 too high
+# wrong 33900
 # wrong 25900 too low
+# right 34230
